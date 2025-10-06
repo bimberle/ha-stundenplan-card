@@ -96,6 +96,10 @@ if command -v node &> /dev/null; then
     if [ -f "dist/ha-stundenplan-card.js" ]; then
         log_success "Card erfolgreich gebaut!"
         
+        # Kopiere für HACS ins Root-Verzeichnis
+        cp dist/ha-stundenplan-card.js ./
+        log_success "Card für HACS ins Root-Verzeichnis kopiert"
+        
         # Zeige Dateigröße
         SIZE=$(wc -c < "dist/ha-stundenplan-card.js")
         SIZE_KB=$((SIZE / 1024))

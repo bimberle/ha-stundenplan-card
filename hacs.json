@@ -1,12 +1,6 @@
 {
   "name": "Stundenplan Card",
-  "version": "1.0.1",
-  "description": "Konfigurierbare Home Assistant Card für Stundenplan-Anzeige",
+  "content_in_root": false,
   "filename": "ha-stundenplan-card.js",
-  "render_readme": true,
-  "homeassistant": "2021.3.0",
-  "iot_class": "Cloud Polling",
-  "zip_release": false,
-  "hide_default_branch": false,
-  "categories": ["integration", "frontend"]
+  "render_readme": true
 }

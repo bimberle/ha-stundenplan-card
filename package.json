@@ -1,6 +1,7 @@
 {
   "name": "ha-stundenplan-card",
   "version": "1.0.1",
+  "type": "module",
   "description": "Home Assistant Custom Card für Stundenplan",
   "main": "dist/ha-stundenplan-card.js",
   "scripts": {
