@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hintergrund -->
+  <rect width="512" height="512" rx="64" fill="#03a9f4"/>
+  
+  <!-- Kalender-Basis -->
+  <rect x="96" y="128" width="320" height="288" rx="16" fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- Kalender-Header -->
+  <rect x="96" y="128" width="320" height="64" rx="16" fill="#1976d2"/>
+  <rect x="96" y="176" width="320" height="16" fill="#1976d2"/>
+  
+  <!-- Bindungsringe -->
+  <circle cx="160" cy="96" r="16" fill="#757575"/>
+  <circle cx="240" cy="96" r="16" fill="#757575"/>
+  <circle cx="320" cy="96" r="16" fill="#757575"/>
+  <circle cx="400" cy="96" r="16" fill="#757575"/>
+  
+  <!-- Ring-Löcher -->
+  <circle cx="160" cy="96" r="8" fill="#ffffff"/>
+  <circle cx="240" cy="96" r="8" fill="#ffffff"/>
+  <circle cx="320" cy="96" r="8" fill="#ffffff"/>
+  <circle cx="400" cy="96" r="8" fill="#ffffff"/>
+  
+  <!-- Titel -->
+  <text x="256" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Stundenplan</text>
+  
+  <!-- Zeiten -->
+  <text x="120" y="232" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#03a9f4">08:00</text>
+  <text x="120" y="272" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#03a9f4">09:30</text>
+  <text x="120" y="312" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#03a9f4">11:00</text>
+  <text x="120" y="352" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#03a9f4">12:30</text>
+  
+  <!-- Fächer -->
+  <text x="200" y="232" font-family="Arial, sans-serif" font-size="16" fill="#212121">Mathematik</text>
+  <text x="200" y="272" font-family="Arial, sans-serif" font-size="16" fill="#212121">Deutsch</text>
+  <text x="200" y="312" font-family="Arial, sans-serif" font-size="16" fill="#212121">Geschichte</text>
+  <text x="200" y="352" font-family="Arial, sans-serif" font-size="16" fill="#212121">Physik</text>
+  
+  <!-- Räume -->
+  <text x="350" y="232" font-family="Arial, sans-serif" font-size="14" fill="#757575">A101</text>
+  <text x="350" y="272" font-family="Arial, sans-serif" font-size="14" fill="#757575">B203</text>
+  <text x="350" y="312" font-family="Arial, sans-serif" font-size="14" fill="#757575">C305</text>
+  <text x="350" y="352" font-family="Arial, sans-serif" font-size="14" fill="#757575">D102</text>
+  
+  <!-- Trennlinien -->
+  <line x1="120" y1="248" x2="392" y2="248" stroke="#e0e0e0" stroke-width="1"/>
+  <line x1="120" y1="288" x2="392" y2="288" stroke="#e0e0e0" stroke-width="1"/>
+  <line x1="120" y1="328" x2="392" y2="328" stroke="#e0e0e0" stroke-width="1"/>
+  
+  <!-- Vertikale Trennlinien -->
+  <line x1="180" y1="208" x2="180" y2="392" stroke="#e0e0e0" stroke-width="1"/>
+  <line x1="320" y1="208" x2="320" y2="392" stroke="#e0e0e0" stroke-width="1"/>
+  
+  <!-- Uhr-Icon -->
+  <circle cx="450" cy="60" r="20" fill="#ffffff" stroke="#03a9f4" stroke-width="2"/>
+  <line x1="450" y1="50" x2="450" y2="60" stroke="#03a9f4" stroke-width="2"/>
+  <line x1="450" y1="60" x2="456" y2="66" stroke="#03a9f4" stroke-width="2"/>
+</svg>

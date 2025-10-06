@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Home Assistant Stundenplan Test</title>
+    <style>
+        /* Home Assistant Theme Simulation */
+        :root {
+            --primary-color: #03a9f4;
+            --accent-color: #ff9800;
+            --dark-primary-color: #0288d1;
+            --light-primary-color: #b3e5fc;
+            --text-primary-color: #ffffff;
+            --primary-text-color: #212121;
+            --secondary-text-color: #727272;
+            --divider-color: #e0e0e0;
+            --card-background-color: #ffffff;
+            --primary-background-color: #fafafa;
+            --secondary-background-color: #f5f5f5;
+            --sidebar-background-color: #ffffff;
+            --sidebar-text-color: #212121;
+            --sidebar-selected-text-color: var(--primary-color);
+            --sidebar-selected-background-color: #e3f2fd;
+            
+            /* HA specific variables */
+            --ha-card-background: var(--card-background-color);
+            --ha-card-border-radius: 12px;
+            --ha-card-border-width: 1px;
+            --ha-card-border-color: var(--divider-color);
+            --spacing: 16px;
+            --border-radius: 8px;
+            --shadow-elevation-2dp: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-elevation-24dp: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-background-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--primary-text-color);
+        }
+
+        .ha-header {
+            background: var(--primary-color);
+            color: var(--text-primary-color);
+            padding: 16px 24px;
+            margin: -20px -20px 20px -20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-elevation-2dp);
+        }
+
+        .ha-logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-title {
+            font-size: 32px;
+            font-weight: 400;
+            margin-bottom: 24px;
+            color: var(--primary-text-color);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .test-card {
+            background: var(--ha-card-background);
+            border-radius: var(--ha-card-border-radius);
+            padding: 16px;
+            box-shadow: var(--shadow-elevation-2dp);
+            border: var(--ha-card-border-width) solid var(--ha-card-border-color);
+        }
+
+        .test-card h3 {
+            margin: 0 0 16px 0;
+            color: var(--primary-color);
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .config-box {
+            background: var(--secondary-background-color);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            border: 1px solid var(--divider-color);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: var(--text-primary-color);
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 8px 8px 8px 0;
+        }
+
+        .btn:hover {
+            background: var(--dark-primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-elevation-2dp);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-color);
+            color: var(--text-primary-color);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-green {
+            background: #4caf50;
+        }
+
+        .status-red {
+            background: #f44336;
+        }
+
+        .status-yellow {
+            background: #ff9800;
+        }
+
+        .stundenplan-container {
+            min-height: 400px;
+            width: 100%;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+
+        .success-box {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="ha-header">
+        <div class="ha-logo">🏠 Home Assistant</div>
+        <div>Stundenplan Card Test Environment</div>
+    </div>
+
+    <div class="dashboard-container">
+        <h1 class="dashboard-title">Dashboard</h1>
+        
+        <div class="card-grid">
+            <!-- Status Card -->
+            <div class="test-card">
+                <h3>🔧 Service Status</h3>
+                <div>
+                    <span class="status-indicator status-green"></span>
+                    <strong>IServ Mock Service:</strong> 
+                    <span id="iserv-status">Prüfe...</span>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span class="status-indicator status-green"></span>
+                    <strong>Card:</strong> 
+                    <span id="card-status">Geladen</span>
+                </div>
+                
+                <div class="info-box">
+                    <strong>💡 Info:</strong> Diese Umgebung simuliert Home Assistant vollständig. 
+                    Deine Karte wird hier genauso aussehen und funktionieren wie in echtem Home Assistant!
+                </div>
+            </div>
+
+            <!-- Configuration Card -->
+            <div class="test-card">
+                <h3>⚙️ Aktuelle Konfiguration</h3>
+                <div class="config-box" id="current-config">
+type: custom:ha-stundenplan-card
+title: "Davids Stundenplan"
+server: "http://localhost:8234"
+username: "david.kech"
+password: "131628%20131628"
+height: 400
+                </div>
+                <button class="btn" onclick="testConnection()">🔗 Verbindung testen</button>
+                <button class="btn btn-secondary" onclick="reloadCard()">🔄 Card neu laden</button>
+            </div>
+
+            <!-- Instructions Card -->
+            <div class="test-card">
+                <h3>📋 Home Assistant Installation</h3>
+                <p><strong>1. Card-Datei kopieren:</strong></p>
+                <div class="config-box">
+cp /workspaces/ha-stundenplan/dist/ha-stundenplan-card.js /config/www/
+                </div>
+                
+                <p><strong>2. Resource hinzufügen:</strong></p>
+                <div class="config-box">
+# In configuration.yaml oder via UI:
+lovelace:
+  resources:
+    - url: /local/ha-stundenplan-card.js
+      type: module
+                </div>
+                
+                <p><strong>3. Card konfigurieren:</strong></p>
+                <div class="config-box">
+type: custom:ha-stundenplan-card
+title: "Mein Stundenplan"  
+server: "http://dein-iserv-server.de"
+username: "dein.username"
+password: "dein.passwort"
+height: 400
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Bereit für Installation!</strong><br>
+                    Die Card funktioniert jetzt mit flexiblen Parametern für jeden Benutzer.
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Stundenplan Card Test -->
+        <div class="test-card" style="margin-top: 20px;">
+            <h3>📅 Stundenplan Card (Live Test)</h3>
+            <div class="stundenplan-container" id="card-container">
+                <!-- Card wird hier geladen -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./ha-stundenplan-card.js"></script>
+    <script>
+        // Mock Home Assistant environment
+        window.customElements = window.customElements || {};
+        
+        // Mock HA elements
+        class MockCircularProgress extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = '<div style="display: inline-block; width: 24px; height: 24px; border: 2px solid #f3f3f3; border-top: 2px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>';
+                const style = document.createElement('style');
+                style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                document.head.appendChild(style);
+            }
+        }
+        
+        class MockIcon extends HTMLElement {
+            connectedCallback() {
+                const icon = this.getAttribute('icon') || '';
+                let symbol = '❗';
+                if (icon.includes('alert')) symbol = '⚠️';
+                if (icon.includes('calendar')) symbol = '📅';
+                if (icon.includes('clock')) symbol = '🕐';
+                this.innerHTML = symbol;
+            }
+        }
+        
+        customElements.define('ha-circular-progress', MockCircularProgress);
+        customElements.define('ha-icon', MockIcon);
+        customElements.define('ha-card', class extends HTMLElement {});
+
+        // Mock Home Assistant object
+        const mockHass = {
+            hassUrl() { return 'http://localhost:8123'; },
+            callService() { console.log('Mock service call'); },
+            callApi() { return Promise.resolve({}); }
+        };
+
+        async function loadCard() {
+            const container = document.getElementById('card-container');
+            
+            try {
+                const card = document.createElement('ha-stundenplan-card');
+                card.hass = mockHass;
+                
+                const config = {
+                    type: 'custom:ha-stundenplan-card',
+                    title: "Davids Stundenplan",
+                    server: 'http://localhost:8234',
+                    username: 'david.kech',
+                    password: '131628%20131628',
+                    height: 400
+                };
+                
+                card.setConfig(config);
+                container.innerHTML = '';
+                container.appendChild(card);
+                
+                document.getElementById('card-status').textContent = 'Erfolgreich geladen ✅';
+                
+            } catch (error) {
+                console.error('Fehler beim Laden der Card:', error);
+                container.innerHTML = `<div style="color: red; padding: 20px;">❌ Fehler: ${error.message}</div>`;
+                document.getElementById('card-status').textContent = 'Fehler beim Laden ❌';
+            }
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch('http://localhost:8234/health');
+                const data = await response.json();
+                document.getElementById('iserv-status').textContent = 'Online ✅';
+                alert('🎉 IServ Mock Service läuft perfekt!\n\nService: ' + data.service + '\nStatus: ' + data.status);
+            } catch (error) {
+                document.getElementById('iserv-status').textContent = 'Offline ❌';
+                alert('❌ IServ Mock Service nicht erreichbar.\n\nBitte starte den Service:\ncd /workspaces/ha-stundenplan/test\nnode iserv-mock-server.js');
+            }
+        }
+
+        function reloadCard() {
+            loadCard();
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadCard, 500);
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>

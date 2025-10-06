@@ -1,0 +1,15 @@
+# YAML Konfiguration für deine Stundenplan-Karte:
+type: custom:ha-stundenplan-card
+title: "Davids Stundenplan" # Optional: Titel der Karte
+server: "http://172.17.0.5:8234" # Dein IServ Server (nur Basis-URL)
+username: "david.kech" # Dein IServ Benutzername
+password: "131628%20131628" # Dein IServ Passwort (URL-codiert)
+height: 400 # Höhe der Karte in Pixel
+
+# Beispiel für andere Benutzer:
+# type: custom:ha-stundenplan-card
+# title: "Mein Stundenplan"
+# server: "https://dein-iserv-server.de"
+# username: "dein.benutzername"
+# password: "dein-passwort"
+# height: 400

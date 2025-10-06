@@ -1,0 +1,139 @@
+name: 🚀 Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: 🔨 Build Card
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install Dependencies
+      run: npm ci
+      
+    - name: 🔨 Build Card
+      run: npm run build
+      
+    - name: 📊 Check Build Output
+      run: |
+        ls -la dist/
+        echo "Build file size:"
+        wc -c < dist/ha-stundenplan-card.js
+        
+    - name: 📤 Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ha-stundenplan-card
+        path: dist/ha-stundenplan-card.js
+        retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    name: 🎉 Create Release
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 📥 Download Build Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ha-stundenplan-card
+        path: dist/
+        
+    - name: 🏷️ Get Version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 📝 Generate Release Notes
+      id: release-notes
+      run: |
+        cat > release-notes.md << EOF
+        ## 🕐 Stundenplan Card ${{ steps.version.outputs.VERSION }}
+        
+        ### ✨ Features
+        - 🎨 Konfigurierbare Stundenplan-Anzeige für Home Assistant
+        - ⚙️ Grafischer Editor für einfache Konfiguration
+        - 🔐 Sichere HTTP Basic Authentication
+        - 📏 Anpassbare Card-Höhe
+        - 📱 Responsive Design mit HA-Themes
+        
+        ### 📦 Installation über HACS
+        1. Füge dieses Repository als Custom Repository zu HACS hinzu
+        2. Installiere "Stundenplan Card" über HACS
+        3. Starte Home Assistant neu
+        4. Füge die Card zu deinem Dashboard hinzu
+        
+        ### ⚙️ Beispiel-Konfiguration
+        \`\`\`yaml
+        type: custom:ha-stundenplan-card
+        server: "https://ihr-stundenplan-server.de"
+        username: "ihr-benutzername" 
+        password: "ihr-passwort"
+        height: 400
+        \`\`\`
+        
+        ### 📊 Server API Format
+        \`\`\`json
+        [
+          {
+            "time": "08:00 - 09:30",
+            "subject": "Mathematik",
+            "room": "A101"
+          }
+        ]
+        \`\`\`
+        
+        ---
+        
+        **Dateigröße:** $(wc -c < dist/ha-stundenplan-card.js) bytes  
+        **Build-Zeit:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+        **Commit:** ${{ github.sha }}
+        EOF
+        
+    - name: 🎉 Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: "🕐 Stundenplan Card ${{ steps.version.outputs.VERSION }}"
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+        files: |
+          dist/ha-stundenplan-card.js
+          assets/icon.svg
+          assets/icon-small.svg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 📊 Release Summary
+      run: |
+        echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+        echo "**Version:** ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Build Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+        echo "**File Size:** $(wc -c < dist/ha-stundenplan-card.js) bytes" >> $GITHUB_STEP_SUMMARY
+        echo "**Release URL:** ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY

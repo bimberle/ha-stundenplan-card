@@ -1,0 +1,55 @@
+name: 🧪 Build Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: 🔍 Test Build
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install Dependencies
+      run: npm ci
+      
+    - name: 🔍 Lint Code
+      run: npm run lint
+      continue-on-error: true
+      
+    - name: 🔨 Test Build
+      run: npm run build
+      
+    - name: ✅ Verify Build Output
+      run: |
+        if [ ! -f "dist/ha-stundenplan-card.js" ]; then
+          echo "❌ Build failed: ha-stundenplan-card.js not found"
+          exit 1
+        fi
+        
+        FILE_SIZE=$(wc -c < dist/ha-stundenplan-card.js)
+        echo "✅ Build successful!"
+        echo "📊 File size: $FILE_SIZE bytes"
+        
+        if [ $FILE_SIZE -lt 1000 ]; then
+          echo "⚠️ Warning: File size seems too small"
+        fi
+        
+    - name: 📊 Build Summary  
+      run: |
+        echo "## 🔨 Build Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+        echo "**File:** dist/ha-stundenplan-card.js" >> $GITHUB_STEP_SUMMARY
+        echo "**Size:** $(wc -c < dist/ha-stundenplan-card.js) bytes" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

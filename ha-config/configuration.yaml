@@ -1,0 +1,29 @@
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+# Lovelace resources for custom cards
+lovelace:
+  mode: storage
+  resources:
+    - url: /local/ha-stundenplan-card.js
+      type: module
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# HTTP component for accessing www files
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+
+# Logger
+logger:
+  default: info
+  logs:
+    custom_components: debug

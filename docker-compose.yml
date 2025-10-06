@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ./ha-config:/config
+      - ./dist/ha-stundenplan-card.js:/config/www/ha-stundenplan-card.js:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - DISABLE_JEMALLOC=true # Better for ARM
+    ports:
+      - "8123:8123"
+    depends_on:
+      - iserv-mock
+
+  # Mock IServ service for testing
+  iserv-mock:
+    container_name: iserv-mock
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./test:/app
+    command: ["node", "iserv-mock-server.js"]
+    ports:
+      - "8234:8234"
+    restart: unless-stopped
+
+volumes:
+  ha_config:

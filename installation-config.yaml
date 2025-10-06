@@ -1,0 +1,5 @@
+# Füge das zu deiner configuration.yaml hinzu:
+lovelace:
+  resources:
+    - url: /local/ha-stundenplan-card.js
+      type: module
