@@ -82,10 +82,33 @@ export class StundenplanCard extends LitElement {
     }
 
     if (changedProperties.has('hass') && this.hass) {
-      this.fetchStundenplanData();
+      this.fetchStundenplanDataIfNeeded();
     }
 
     return true;
+  }
+
+  private async fetchStundenplanDataIfNeeded(): Promise<void> {
+    if (!this.config) return;
+
+    // Prüfe ob ein Fetch wirklich nötig ist
+    const minCacheDurationMs = 5 * 60 * 1000; // 5 Minuten Minimum-Cache
+    const now = new Date();
+    
+    // Wenn wir bereits Daten haben und diese noch frisch sind, nicht erneut laden
+    if (this.lastUpdated && 
+        this.stundenplanData && 
+        Object.keys(this.stundenplanData).length > 0) {
+      const timeSinceLastUpdate = now.getTime() - this.lastUpdated.getTime();
+      if (timeSinceLastUpdate < minCacheDurationMs) {
+        console.log(`Cache ist noch frisch (${Math.round(timeSinceLastUpdate/1000)}s alt), lade nicht neu`);
+        return;
+      }
+    }
+
+    // Wenn kein Cache oder Cache zu alt, dann laden
+    console.log('Cache abgelaufen oder nicht vorhanden, lade neue Daten');
+    this.fetchStundenplanData();
   }
 
   private async fetchStundenplanData(): Promise<void> {
@@ -149,7 +172,7 @@ export class StundenplanCard extends LitElement {
       const intervalMs = this.config.refresh_interval * 60 * 1000; // Minuten zu Millisekunden
       this.refreshInterval = window.setInterval(() => {
         if (!this.isLoading) {
-          this.fetchStundenplanData();
+          this.fetchStundenplanDataIfNeeded();
         }
       }, intervalMs);
     }
@@ -198,13 +221,9 @@ export class StundenplanCard extends LitElement {
     return html`
       <ha-card>
         <div class="card-header">
-          <div class="header-left">
-            <div class="name">${this.config.title}</div>
-            <div class="server-info">${this.config.server}</div>
-          </div>
-          <div class="header-right">
-            ${this.renderRefreshButton()}
-          </div>
+          <div class="name">${this.config.title}</div>
+          <div class="server-info">${this.config.server}</div>
+          ${this.renderSmallRefreshButton()}
         </div>
         
         <div class="card-content" style="height: ${this.config.height}px;">
@@ -243,6 +262,8 @@ export class StundenplanCard extends LitElement {
             </div>
           </div>
         ` : ''}
+        
+        ${this.renderLastUpdateInfo()}
       </ha-card>
     `;
   }
@@ -274,7 +295,7 @@ export class StundenplanCard extends LitElement {
     `;
   }
 
-  private renderRefreshButton() {
+  private renderSmallRefreshButton() {
     const lastUpdateText = this.lastUpdated 
       ? `Zuletzt aktualisiert: ${this.lastUpdated.toLocaleTimeString()}`
       : 'Noch nicht geladen';
@@ -284,20 +305,34 @@ export class StundenplanCard extends LitElement {
       : 'Kein Auto-Update';
 
     return html`
-      <div class="refresh-section">
-        <button 
-          class="refresh-button ${this.isLoading ? 'loading' : ''}"
-          @click=${this.handleManualRefresh}
-          ?disabled=${this.isLoading}
-          title="${lastUpdateText} | ${nextUpdateText}"
-        >
-          <ha-icon icon="${this.isLoading ? 'mdi:loading' : 'mdi:refresh'}" 
-                   class="${this.isLoading ? 'rotating' : ''}"></ha-icon>
-        </button>
-        <div class="refresh-info">
-          <div class="last-update">${lastUpdateText}</div>
-          <div class="auto-update">${nextUpdateText}</div>
-        </div>
+      <button 
+        class="small-refresh-button ${this.isLoading ? 'loading' : ''}"
+        @click=${this.handleManualRefresh}
+        ?disabled=${this.isLoading}
+        title="${lastUpdateText} | ${nextUpdateText}"
+      >
+        <ha-icon icon="${this.isLoading ? 'mdi:loading' : 'mdi:refresh'}" 
+                 class="${this.isLoading ? 'rotating' : ''}"></ha-icon>
+      </button>
+    `;
+  }
+
+  private renderLastUpdateInfo() {
+    if (!this.lastUpdated) {
+      return html``;
+    }
+
+    const updateText = this.lastUpdated.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return html`
+      <div class="last-update-footer">
+        Zuletzt aktualisiert: ${updateText}
       </div>
     `;
   }
@@ -323,19 +358,7 @@ export class StundenplanCard extends LitElement {
         padding: var(--ha-card-header-padding, 16px);
         border-bottom: 1px solid var(--ha-card-border-color, var(--divider-color));
         background: var(--ha-card-header-background, transparent);
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-      }
-      
-      .header-left {
-        flex: 1;
-      }
-      
-      .header-right {
-        flex-shrink: 0;
-        border-radius: var(--ha-card-border-radius) var(--ha-card-border-radius) 0 0;
+        position: relative;
       }
       
       .name {
@@ -634,44 +657,42 @@ export class StundenplanCard extends LitElement {
         }
       }
 
-      /* Refresh Button Styles */
-      .refresh-section {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .refresh-button {
+      /* Small Refresh Button Styles */
+      .small-refresh-button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
         background: var(--primary-color);
-        color: var(--primary-text-color);
+        color: var(--text-primary-color);
         border: none;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        z-index: 10;
       }
 
-      .refresh-button:hover:not(:disabled) {
+      .small-refresh-button:hover:not(:disabled) {
         background: var(--primary-color);
         filter: brightness(1.1);
-        transform: scale(1.05);
+        transform: scale(1.1);
       }
 
-      .refresh-button:disabled {
-        opacity: 0.7;
+      .small-refresh-button:disabled {
+        opacity: 0.6;
         cursor: not-allowed;
       }
 
-      .refresh-button ha-icon {
-        --mdc-icon-size: 20px;
+      .small-refresh-button ha-icon {
+        --mdc-icon-size: 16px;
       }
 
-      .refresh-button .rotating {
+      .small-refresh-button .rotating {
         animation: spin 1s linear infinite;
       }
 
@@ -680,30 +701,25 @@ export class StundenplanCard extends LitElement {
         to { transform: rotate(360deg); }
       }
 
-      .refresh-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        font-size: 0.75em;
+      /* Last Update Footer */
+      .last-update-footer {
+        padding: 8px 16px;
+        border-top: 1px solid var(--divider-color);
+        background: var(--card-background-color);
+        font-size: 0.7em;
         color: var(--secondary-text-color);
-        min-width: 120px;
-      }
-
-      .last-update {
-        font-weight: 500;
-      }
-
-      .auto-update {
-        opacity: 0.8;
+        text-align: center;
+        border-radius: 0 0 var(--ha-card-border-radius) var(--ha-card-border-radius);
       }
 
       @media (max-width: 600px) {
-        .refresh-info {
-          display: none;
+        .small-refresh-button {
+          width: 24px;
+          height: 24px;
         }
         
-        .refresh-section {
-          justify-content: center;
+        .small-refresh-button ha-icon {
+          --mdc-icon-size: 14px;
         }
       }
     `;
