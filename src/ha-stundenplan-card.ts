@@ -10,6 +10,17 @@ export { StundenplanCardEditor } from './editor';
   type: 'ha-stundenplan-card',
   name: 'Stundenplan Card',
   description: 'Eine konfigurierbare Card für Stundenplan-Anzeige',
+  getConfigElement: () => {
+    return document.createElement('ha-stundenplan-card-editor');
+  },
+  getStubConfig: () => ({
+    type: 'custom:ha-stundenplan-card',
+    server: '',
+    username: '',
+    password: '',
+    height: 400,
+    title: 'Stundenplan',
+  }),
 });
 
 console.info(

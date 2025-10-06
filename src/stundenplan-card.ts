@@ -46,6 +46,23 @@ export class StundenplanCard extends LitElement {
     return Math.ceil((this.config?.height || 400) / 50);
   }
 
+  // Statische Methode für Home Assistant Editor
+  public static getConfigElement(): HTMLElement {
+    return document.createElement('ha-stundenplan-card-editor');
+  }
+
+  // Stub-Konfiguration für neue Cards
+  public static getStubConfig(): StundenplanCardConfig {
+    return {
+      type: 'custom:ha-stundenplan-card',
+      server: '',
+      username: '',
+      password: '',
+      height: 400,
+      title: 'Stundenplan',
+    };
+  }
+
   protected shouldUpdate(changedProperties: PropertyValues): boolean {
     if (!this.config) {
       return false;

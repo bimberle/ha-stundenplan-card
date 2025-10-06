@@ -103,11 +103,14 @@ export class StundenplanCardEditor extends LitElement {
           </div>
         </div>
 
+        <div class="validation-section">
+          ${this.renderValidation()}
+        </div>
+
         <div class="preview-section">
           <div class="preview-header">Vorschau</div>
           <div class="preview-info">
-            Die Card wird Stundenplan-Daten von <strong>${this.config.server || 'Server nicht konfiguriert'}</strong> 
-            ${this.config.username ? `für Benutzer <strong>${this.config.username}</strong>` : ''} laden.
+            ${this.renderPreview()}
           </div>
         </div>
       </div>
@@ -121,7 +124,7 @@ export class StundenplanCardEditor extends LitElement {
 
     const target = ev.target as any;
     const configValue = target.configValue;
-    const value = target.value;
+    let value = target.value;
 
     if ((this.config as any)[configValue] === value) {
       return;
@@ -131,10 +134,15 @@ export class StundenplanCardEditor extends LitElement {
     
     if (configValue === 'height') {
       const numValue = parseInt(value, 10);
-      if (!isNaN(numValue) && numValue > 0) {
+      if (!isNaN(numValue) && numValue >= 100 && numValue <= 1000) {
         (newConfig as any)[configValue] = numValue;
+      } else {
+        // Bei ungültigen Werten auf Standard zurücksetzen
+        (newConfig as any)[configValue] = 400;
       }
     } else {
+      // Trim whitespace für Text-Felder
+      value = typeof value === 'string' ? value.trim() : value;
       (newConfig as any)[configValue] = value;
     }
 
@@ -149,6 +157,84 @@ export class StundenplanCardEditor extends LitElement {
       composed: true,
     });
     this.dispatchEvent(event);
+  }
+
+  private renderValidation() {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validierung
+    if (!this.config.server) {
+      errors.push('Server-URL ist erforderlich');
+    } else if (!this.config.server.startsWith('http')) {
+      errors.push('Server-URL muss mit http:// oder https:// beginnen');
+    }
+
+    if (!this.config.username) {
+      errors.push('Benutzername ist erforderlich');
+    }
+
+    if (!this.config.password) {
+      errors.push('Passwort ist erforderlich');
+    }
+
+    if (this.config.height && (this.config.height < 100 || this.config.height > 1000)) {
+      warnings.push('Empfohlene Höhe liegt zwischen 100 und 1000 Pixel');
+    }
+
+    if (errors.length === 0 && warnings.length === 0) {
+      return html`
+        <div class="validation-success">
+          <ha-icon icon="mdi:check-circle" style="color: var(--success-color);"></ha-icon>
+          <span>Konfiguration ist vollständig</span>
+        </div>
+      `;
+    }
+
+    return html`
+      ${errors.map(error => html`
+        <div class="validation-error">
+          <ha-icon icon="mdi:alert-circle" style="color: var(--error-color);"></ha-icon>
+          <span>${error}</span>
+        </div>
+      `)}
+      ${warnings.map(warning => html`
+        <div class="validation-warning">
+          <ha-icon icon="mdi:alert" style="color: var(--warning-color);"></ha-icon>
+          <span>${warning}</span>
+        </div>
+      `)}
+    `;
+  }
+
+  private renderPreview() {
+    if (!this.config.server || !this.config.username) {
+      return html`
+        <div class="preview-placeholder">
+          Konfigurieren Sie Server-URL und Benutzername um eine Vorschau zu sehen.
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="preview-config">
+        <div class="config-item">
+          <strong>Server:</strong> ${this.config.server}
+        </div>
+        <div class="config-item">
+          <strong>Benutzer:</strong> ${this.config.username}
+        </div>
+        <div class="config-item">
+          <strong>Höhe:</strong> ${this.config.height}px
+        </div>
+        <div class="config-item">
+          <strong>Titel:</strong> ${this.config.title || 'Stundenplan'}
+        </div>
+      </div>
+      <div class="preview-note">
+        💡 Die Card wird nach dem Speichern Stundenplan-Daten vom konfigurierten Server laden.
+      </div>
+    `;
   }
 
   static get styles() {
@@ -204,6 +290,75 @@ export class StundenplanCardEditor extends LitElement {
       .preview-info strong {
         color: var(--primary-text-color);
       }
+
+      .validation-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .validation-success,
+      .validation-error,
+      .validation-warning {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9em;
+      }
+
+      .validation-success {
+        background: var(--success-color, #4caf50);
+        background: color-mix(in srgb, var(--success-color, #4caf50) 10%, transparent);
+        color: var(--success-color, #4caf50);
+      }
+
+      .validation-error {
+        background: var(--error-color, #f44336);
+        background: color-mix(in srgb, var(--error-color, #f44336) 10%, transparent);
+        color: var(--error-color, #f44336);
+      }
+
+      .validation-warning {
+        background: var(--warning-color, #ff9800);
+        background: color-mix(in srgb, var(--warning-color, #ff9800) 10%, transparent);
+        color: var(--warning-color, #ff9800);
+      }
+
+      .preview-placeholder {
+        color: var(--secondary-text-color);
+        font-style: italic;
+        text-align: center;
+        padding: 16px;
+      }
+
+      .preview-config {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .config-item {
+        display: flex;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--divider-color);
+      }
+
+      .config-item strong {
+        min-width: 80px;
+        margin-right: 16px;
+      }
+
+      .preview-note {
+        margin-top: 12px;
+        padding: 12px;
+        background: var(--info-color, #2196f3);
+        background: color-mix(in srgb, var(--info-color, #2196f3) 10%, transparent);
+        color: var(--info-color, #2196f3);
+        border-radius: 6px;
+        font-size: 0.9em;
+      }
     `;
   }
 }
@@ -216,14 +371,7 @@ declare global {
       name: string;
       description: string;
       getConfigElement?: () => HTMLElement;
+      getStubConfig?: () => any;
     }>;
-  }
-}
-
-// Registriere den Editor
-if ((window as any).customCards) {
-  const cardConfig = (window as any).customCards.find((card: any) => card.type === 'ha-stundenplan-card');
-  if (cardConfig) {
-    cardConfig.getConfigElement = () => new StundenplanCardEditor();
   }
 }
