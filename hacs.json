@@ -1,7 +1,5 @@
 {
   "name": "Stundenplan Card",
-  "content_in_root": true,
   "filename": "ha-stundenplan-card.js",
-  "render_readme": true,
-  "homeassistant": "2021.3.0"
+  "render_readme": true
 }
