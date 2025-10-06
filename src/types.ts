@@ -5,6 +5,7 @@ export interface StundenplanCardConfig {
   password: string;
   height: number;
   title?: string;
+  refresh_interval?: number; // Minuten zwischen automatischen Updates (Standard: 30)
 }
 
 export interface HomeAssistant {

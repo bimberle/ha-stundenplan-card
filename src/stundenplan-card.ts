@@ -12,6 +12,9 @@ export class StundenplanCard extends LitElement {
   @state() private modalOpen = false;
   @state() private modalImageSrc = '';
   @state() private modalTitle = '';
+  @state() private lastUpdated: Date | null = null;
+  
+  private refreshInterval: number | null = null;
 
   public setConfig(config: StundenplanCardConfig): void {
     if (!config) {
@@ -39,7 +42,11 @@ export class StundenplanCard extends LitElement {
       type: config.type || 'custom:ha-stundenplan-card',
       height: config.height || 400,
       title: config.title || 'Stundenplan',
+      refresh_interval: config.refresh_interval || 30, // Standard: 30 Minuten
     };
+    
+    // Auto-Refresh Timer starten
+    this.startAutoRefresh();
   }
 
   public getCardSize(): number {
@@ -60,12 +67,18 @@ export class StundenplanCard extends LitElement {
       password: '',
       height: 400,
       title: 'Stundenplan',
+      refresh_interval: 30,
     };
   }
 
   protected shouldUpdate(changedProperties: PropertyValues): boolean {
     if (!this.config) {
       return false;
+    }
+
+    // Bei Konfigurationsänderungen Auto-Refresh neu starten
+    if (changedProperties.has('config')) {
+      this.startAutoRefresh();
     }
 
     if (changedProperties.has('hass') && this.hass) {
@@ -106,6 +119,7 @@ export class StundenplanCard extends LitElement {
       // Extract screenshot data from IServ API response
       if (data.success && data.screenshots) {
         this.stundenplanData = data.screenshots;
+        this.lastUpdated = new Date();
       } else {
         throw new Error('Keine gültigen Stundenplan-Daten erhalten');
       }
@@ -124,6 +138,38 @@ export class StundenplanCard extends LitElement {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  private startAutoRefresh(): void {
+    // Vorherigen Timer löschen
+    this.stopAutoRefresh();
+    
+    // Neuen Timer nur setzen wenn Intervall > 0
+    if (this.config.refresh_interval && this.config.refresh_interval > 0) {
+      const intervalMs = this.config.refresh_interval * 60 * 1000; // Minuten zu Millisekunden
+      this.refreshInterval = window.setInterval(() => {
+        if (!this.isLoading) {
+          this.fetchStundenplanData();
+        }
+      }, intervalMs);
+    }
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.refreshInterval !== null) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  private handleManualRefresh(): void {
+    this.fetchStundenplanData();
+  }
+
+  // Lifecycle-Methoden
+  public disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.stopAutoRefresh();
   }
 
   private openModal(imageSrc: string, title: string) {
@@ -152,8 +198,13 @@ export class StundenplanCard extends LitElement {
     return html`
       <ha-card>
         <div class="card-header">
-          <div class="name">${this.config.title}</div>
-          <div class="server-info">${this.config.server}</div>
+          <div class="header-left">
+            <div class="name">${this.config.title}</div>
+            <div class="server-info">${this.config.server}</div>
+          </div>
+          <div class="header-right">
+            ${this.renderRefreshButton()}
+          </div>
         </div>
         
         <div class="card-content" style="height: ${this.config.height}px;">
@@ -223,6 +274,34 @@ export class StundenplanCard extends LitElement {
     `;
   }
 
+  private renderRefreshButton() {
+    const lastUpdateText = this.lastUpdated 
+      ? `Zuletzt aktualisiert: ${this.lastUpdated.toLocaleTimeString()}`
+      : 'Noch nicht geladen';
+    
+    const nextUpdateText = this.config.refresh_interval && this.config.refresh_interval > 0
+      ? `Auto-Update alle ${this.config.refresh_interval} Min.`
+      : 'Kein Auto-Update';
+
+    return html`
+      <div class="refresh-section">
+        <button 
+          class="refresh-button ${this.isLoading ? 'loading' : ''}"
+          @click=${this.handleManualRefresh}
+          ?disabled=${this.isLoading}
+          title="${lastUpdateText} | ${nextUpdateText}"
+        >
+          <ha-icon icon="${this.isLoading ? 'mdi:loading' : 'mdi:refresh'}" 
+                   class="${this.isLoading ? 'rotating' : ''}"></ha-icon>
+        </button>
+        <div class="refresh-info">
+          <div class="last-update">${lastUpdateText}</div>
+          <div class="auto-update">${nextUpdateText}</div>
+        </div>
+      </div>
+    `;
+  }
+
   static get styles() {
     return css`
       :host {
@@ -244,6 +323,18 @@ export class StundenplanCard extends LitElement {
         padding: var(--ha-card-header-padding, 16px);
         border-bottom: 1px solid var(--ha-card-border-color, var(--divider-color));
         background: var(--ha-card-header-background, transparent);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .header-left {
+        flex: 1;
+      }
+      
+      .header-right {
+        flex-shrink: 0;
         border-radius: var(--ha-card-border-radius) var(--ha-card-border-radius) 0 0;
       }
       
@@ -540,6 +631,79 @@ export class StundenplanCard extends LitElement {
         
         .modal-content {
           margin: 10px;
+        }
+      }
+
+      /* Refresh Button Styles */
+      .refresh-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .refresh-button {
+        background: var(--primary-color);
+        color: var(--primary-text-color);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      .refresh-button:hover:not(:disabled) {
+        background: var(--primary-color);
+        filter: brightness(1.1);
+        transform: scale(1.05);
+      }
+
+      .refresh-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .refresh-button ha-icon {
+        --mdc-icon-size: 20px;
+      }
+
+      .refresh-button .rotating {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .refresh-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 0.75em;
+        color: var(--secondary-text-color);
+        min-width: 120px;
+      }
+
+      .last-update {
+        font-weight: 500;
+      }
+
+      .auto-update {
+        opacity: 0.8;
+      }
+
+      @media (max-width: 600px) {
+        .refresh-info {
+          display: none;
+        }
+        
+        .refresh-section {
+          justify-content: center;
         }
       }
     `;

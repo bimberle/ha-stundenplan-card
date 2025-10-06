@@ -16,6 +16,7 @@ export class StundenplanCardEditor extends LitElement {
       username: config.username || '',
       password: config.password || '',
       height: config.height || 400,
+      refresh_interval: config.refresh_interval || 30,
     };
   }
 
@@ -103,6 +104,24 @@ export class StundenplanCardEditor extends LitElement {
           </div>
         </div>
 
+        <div class="option">
+          <label for="refresh_interval">Auto-Update Intervall (Minuten)</label>
+          <ha-textfield
+            id="refresh_interval"
+            type="number"
+            .label=${"Aktualisierung alle X Minuten"}
+            .value=${this.config.refresh_interval}
+            .configValue=${"refresh_interval"}
+            @input=${this.valueChanged}
+            min="0"
+            max="1440"
+            step="5"
+          ></ha-textfield>
+          <div class="helper-text">
+            Automatische Aktualisierung alle X Minuten (0 = deaktiviert, Standard: 30 Min.)
+          </div>
+        </div>
+
         <div class="validation-section">
           ${this.renderValidation()}
         </div>
@@ -139,6 +158,14 @@ export class StundenplanCardEditor extends LitElement {
       } else {
         // Bei ungültigen Werten auf Standard zurücksetzen
         (newConfig as any)[configValue] = 400;
+      }
+    } else if (configValue === 'refresh_interval') {
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 1440) {
+        (newConfig as any)[configValue] = numValue;
+      } else {
+        // Bei ungültigen Werten auf Standard zurücksetzen
+        (newConfig as any)[configValue] = 30;
       }
     } else {
       // Trim whitespace für Text-Felder
@@ -180,6 +207,14 @@ export class StundenplanCardEditor extends LitElement {
 
     if (this.config.height && (this.config.height < 100 || this.config.height > 1000)) {
       warnings.push('Empfohlene Höhe liegt zwischen 100 und 1000 Pixel');
+    }
+
+    if (this.config.refresh_interval !== undefined) {
+      if (this.config.refresh_interval < 0 || this.config.refresh_interval > 1440) {
+        warnings.push('Auto-Update Intervall sollte zwischen 0 und 1440 Minuten liegen');
+      } else if (this.config.refresh_interval > 0 && this.config.refresh_interval < 5) {
+        warnings.push('Intervalle unter 5 Minuten können die Server-Performance beeinträchtigen');
+      }
     }
 
     if (errors.length === 0 && warnings.length === 0) {
@@ -230,9 +265,15 @@ export class StundenplanCardEditor extends LitElement {
         <div class="config-item">
           <strong>Titel:</strong> ${this.config.title || 'Stundenplan'}
         </div>
+        <div class="config-item">
+          <strong>Auto-Update:</strong> ${this.config.refresh_interval === 0 ? 'Deaktiviert' : `Alle ${this.config.refresh_interval} Min.`}
+        </div>
       </div>
       <div class="preview-note">
         💡 Die Card wird nach dem Speichern Stundenplan-Daten vom konfigurierten Server laden.
+        ${this.config.refresh_interval && this.config.refresh_interval > 0 
+          ? `📱 Daten werden automatisch alle ${this.config.refresh_interval} Minuten aktualisiert.`
+          : '⚠️ Auto-Update ist deaktiviert - nur manuelle Aktualisierung möglich.'}
       </div>
     `;
   }
